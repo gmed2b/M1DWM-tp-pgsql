@@ -1,112 +1,146 @@
 import random
 from faker import Faker
-import psycopg2
-from datetime import datetime, timedelta
+import datetime
 
 # Initialisation de Faker
 fake = Faker()
 
-# Connexion à la base de données PostgreSQL
-conn = psycopg2.connect(
-    dbname="tpbd",
-    user="postgres",
-    password="postgres",
-    host="localhost",
-    port="5445"
-)
-cursor = conn.cursor()
+# Fonction pour générer des dates d'inscriptions cohérentes
+def generate_dates_for_year(year):
+    start_date = datetime.date(year, 9, 1)  # Début d'année académique
+    end_date = datetime.date(year + 1, 6, 30)  # Fin d'année académique
+    return start_date, end_date
 
-# Fonction pour générer des personnes (étudiants et enseignants)
-def generate_persons(num_persons):
-    persons = []
-    for _ in range(num_persons):
-        prenom = fake.first_name()
-        nom = fake.last_name()
-        date_naissance = fake.date_of_birth(minimum_age=18, maximum_age=30)  
+# Fonction pour générer des inscriptions
+def generate_inscriptions(annee_formation_id, num_etudiants, max_inscription):
+    inscriptions = []
+    for _ in range(num_etudiants):
+        etudiant_id = random.randint(1, 1000)  # Identifier des étudiants fictifs
+        start_date, end_date = generate_dates_for_year(2023)  # Exemple pour l'année 2023
+        validation_state = random.choice(["En attente", "Validée", "Rejetée"])  # État d'inscription
+        inscriptions.append((etudiant_id, annee_formation_id, start_date, validation_state))
+    return inscriptions
+
+# Fonction pour générer des étudiants fictifs
+def generate_students(num_students):
+    students = []
+    for _ in range(num_students):
+        first_name = fake.first_name()
+        last_name = fake.last_name()
+        birth_date = fake.date_of_birth(minimum_age=18, maximum_age=30)
         email = fake.email()
-        telephone = fake.phone_number()
-        adresse = fake.address()
-        
-        persons.append((prenom, nom, date_naissance, email, telephone, adresse))
-    
-    return persons
+        phone = fake.phone_number()
+        address = fake.address()
+        titre = random.choice(["M.", "Mme", "Dr.", "Pr."])
+        students.append((titre, first_name, last_name, birth_date, email, phone, address))
+    return students
 
-# Fonction pour insérer des personnes dans la base
-def insert_persons(persons):
-    for person in persons:
-        cursor.execute("""
-            INSERT INTO personnes (prenom, nom, date_naissance, email, telephone, adresse) 
-            VALUES (%s, %s, %s, %s, %s, %s) RETURNING id_personne;
-        """, person)
-        person_id = cursor.fetchone()[0]
-        cursor.execute("INSERT INTO etudiants (id_personne, email_etudiant) VALUES (%s, %s)", (person_id, person[3]))
-        
-# Générer et insérer 1000 personnes
-persons = generate_persons(1000)
-insert_persons(persons)
-
-# Fonction pour générer des formations
+# Fonction pour générer des formations fictives
 def generate_formations():
-    formations = [
-        ('Licence Informatique', 'Formation en informatique couvrant programmation, bases de données, réseaux, etc.', 'Licence', 'Sciences'),
-        ('Master Mathématiques', 'Formation avancée en mathématiques appliquées et recherche', 'Master', 'Mathématiques Appliquées')
-    ]
+    formations = []
+    for year in range(2005, 2025):  # De 2005 à 2024
+        formations.append(('Licence Informatique', 'Formation en informatique', 'Licence', 'Informatique', 'Aucun prérequis'))
+        formations.append(('Master Informatique', 'Formation en informatique avancée', 'Master', 'Informatique', 'Licence en Informatique'))
     return formations
 
-# Insérer les formations
-formations = generate_formations()
-for formation in formations:
-    cursor.execute("""
-        INSERT INTO formations (nom, description, niveau, departement) 
-        VALUES (%s, %s, %s, %s) RETURNING id_formation;
-    """, formation)
-    formation_id = cursor.fetchone()[0]
-    
-    # Ajouter les années de formation (L1, L2, L3 pour Licence, M1, M2 pour Master)
-    if formation[2] == 'Licence':
-        for niveau in ['L1', 'L2', 'L3']:
-            cursor.execute("""
-                INSERT INTO annees_formation (id_formation, niveau, nbr_max_etu) 
-                VALUES (%s, %s, %s);
-            """, (formation_id, niveau, random.randint(50, 150)))  # Nombre d'étudiants variable
-    else:
-        for niveau in ['M1', 'M2']:
-            cursor.execute("""
-                INSERT INTO annees_formation (id_formation, niveau, nbr_max_etu) 
-                VALUES (%s, %s, %s);
-            """, (formation_id, niveau, random.randint(20, 100)))
+# Fonction pour générer des années de formation
+def generate_annees_formation(formations):
+    annees = []
+    for formation in formations:
+        formation_id = random.randint(1, 10)
+        niveau = formation[2]  # Licence ou Master
+        max_etu = random.randint(10, 100)  # Nombre max d'étudiants par année
+        annees.append((formation_id, niveau, max_etu))
+    return annees
 
-# Générer des inscriptions pour chaque année de formation
-def generate_inscriptions():
-    cursor.execute("SELECT id_formation, id_annee_formation FROM annees_formation")
-    formations_annees = cursor.fetchall()
-    
-    for id_formation, id_annee_formation in formations_annees:
-        cursor.execute("SELECT id_personne FROM personnes")
-        students = cursor.fetchall()
-        
-        for student_id in students:
-            student_id = student_id[0]
-            
-            # Assurer que l'étudiant n'a pas plus de 2 inscriptions pour la même année
-            cursor.execute("""
-                SELECT COUNT(*) FROM inscriptions WHERE numero_etudiant = %s AND id_annee_formation = %s;
-            """, (student_id, id_annee_formation))
-            count = cursor.fetchone()[0]
-            if count < 2:
-                # Inscription
-                date_inscription = fake.date_this_decade()
-                cursor.execute("""
-                    INSERT INTO inscriptions (numero_etudiant, id_annee_formation, valide_le) 
-                    VALUES (%s, %s, %s);
-                """, (student_id, id_annee_formation, date_inscription))
+# Fonction pour générer des semestres
+def generate_semestres(annees):
+    semestres = []
+    for annee in annees:
+        for niveau in ["S1", "S2"]:
+            date_debut = datetime.date(annee[0], 9, 1)  # Semestre commence en septembre
+            date_fin = datetime.date(annee[0], 12, 20)  # Semestre se termine en décembre
+            duree = (date_fin - date_debut).days  # Calcul de la durée en jours
+            semestres.append((annee[0], niveau, date_debut, date_fin, duree))
+    return semestres
 
-# Générer les inscriptions
-generate_inscriptions()
+# Fonction pour générer des unités d'enseignement
+def generate_unites_enseignement(semestres):
+    unites = []
+    for semestre in semestres:
+        for i in range(1, 4):  # 3 unités d'enseignement par semestre
+            description = f"Description de l'UE{i} pour le semestre {semestre[1]}"
+            obligatoire = random.choice([True, False])
+            unites.append((semestre[0], f"UE{i} - {semestre[1]}", random.uniform(1.0, 3.0), description, obligatoire))
+    return unites
 
-# Commit des changements
-conn.commit()
+# Fonction pour générer des éléments constitutifs
+def generate_elements_constitutifs(unites, enseignants):
+    elements = []
+    for unite in unites:
+        enseignant_id = random.choice(enseignants)[0]
+        evaluation_type = random.choice(["Examen", "Projet", "Présentation"])
+        elements.append((unite[0], enseignant_id, unite[1], random.randint(10, 30), random.randint(5, 10), random.randint(2, 5), evaluation_type))
+    return elements
 
-# Fermeture de la connexion
-cursor.close()
-conn.close()
+# Fonction pour générer des inscriptions d'étudiants pour chaque année de formation
+def generate_inscriptions_for_years(annees, students):
+    inscriptions = []
+    for annee in annees:
+        annee_formation_id = annee[0]
+        num_students = random.randint(2, annee[2])  # Nombre d'étudiants par année
+        inscriptions.extend(generate_inscriptions(annee_formation_id, num_students, annee[2]))
+    return inscriptions
+
+# Fonction pour générer les notes
+def generate_notes(elements, inscriptions):
+    notes = []
+    for inscription in inscriptions:
+        for element in elements:
+            note = round(random.uniform(10.0, 20.0), 1)  # Note entre 10 et 20
+            evaluation_date = fake.date_this_year()
+            notes.append((inscription[0], element[0], note, evaluation_date))
+    return notes
+
+# Génération des données fictives
+students = generate_students(1000)  # Générer 1000 étudiants
+formations = generate_formations()  # Générer les formations
+annees = generate_annees_formation(formations)  # Générer les années de formation
+semestres = generate_semestres(annees)  # Générer les semestres
+unites = generate_unites_enseignement(semestres)  # Générer les unités d'enseignement
+enseignants = [(i, fake.name(), random.choice(["Algorithmique", "Réseaux", "Bases de données", "Systèmes embarqués", "IA"])) for i in range(1, 51)]  # Générer des enseignants fictifs avec spécialités
+elements = generate_elements_constitutifs(unites, enseignants)  # Générer les éléments constitutifs
+inscriptions = generate_inscriptions_for_years(annees, students)  # Générer les inscriptions des étudiants
+notes = generate_notes(elements, inscriptions)  # Générer les notes
+
+# Fonction pour générer des scripts SQL d'insertion
+def generate_sql_insert(table_name, data):
+    sql = f"INSERT INTO {table_name} VALUES\n"
+    sql += ",\n".join([f"({', '.join(map(str, row))})" for row in data])
+    sql += ";"
+    return sql
+
+# Sauvegarde des données dans des fichiers SQL
+with open('insert_personnes.sql', 'w') as file:
+    file.write(generate_sql_insert('personnes', students))
+
+with open('insert_formations.sql', 'w') as file:
+    file.write(generate_sql_insert('formations', formations))
+
+with open('insert_annees_formation.sql', 'w') as file:
+    file.write(generate_sql_insert('annees_formation', annees))
+
+with open('insert_semestres.sql', 'w') as file:
+    file.write(generate_sql_insert('semestres', semestres))
+
+with open('insert_unites_enseignement.sql', 'w') as file:
+    file.write(generate_sql_insert('unites_enseignement', unites))
+
+with open('insert_elements_constitutif.sql', 'w') as file:
+    file.write(generate_sql_insert('elements_constitutif', elements))
+
+with open('insert_inscriptions.sql', 'w') as file:
+    file.write(generate_sql_insert('inscriptions', inscriptions))
+
+with open('insert_notes_ec.sql', 'w') as file:
+    file.write(generate_sql_insert('notes_ec', notes))
