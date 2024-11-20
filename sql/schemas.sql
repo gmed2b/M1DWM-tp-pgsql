@@ -17,8 +17,8 @@ CREATE TABLE personnes (
   prenom VARCHAR(255) NOT NULL,
   nom VARCHAR(255) NOT NULL,
   date_naissance DATE NOT NULL,
-  email VARCHAR(50) UNIQUE,
-  telephone VARCHAR(15) UNIQUE,
+  email VARCHAR(60) UNIQUE,
+  telephone VARCHAR(30) UNIQUE,
   adresse TEXT
 );
 
@@ -50,6 +50,7 @@ CREATE TABLE formations (
 CREATE TABLE annees_formation(
   id_annee_formation SERIAL PRIMARY KEY,
   id_formation INT NOT NULL,
+  date_formation DATE NOT NULL,
   niveau VARCHAR(255) NOT NULL,
   nbr_max_etu INT NOT NULL,
   CHECK (nbr_max_etu >= 1),
@@ -60,20 +61,22 @@ CREATE TABLE annees_formation(
 CREATE TABLE semestres (
   id_semestre SERIAL PRIMARY KEY,
   id_annee_formation INT NOT NULL,
-  nom VARCHAR(255) NOT NULL,
+  semestre VARCHAR(255) NOT NULL,
   date_debut DATE NOT NULL,
   date_fin DATE NOT NULL,
   CHECK (date_fin > date_debut),
   FOREIGN KEY (id_annee_formation)
   REFERENCES annees_formation(id_annee_formation),
-  UNIQUE (id_annee_formation, nom)
+  UNIQUE (id_annee_formation, semestre)
 );
 
 CREATE TABLE unites_enseignement(
   id_ue SERIAL PRIMARY KEY,
   id_semestre INT NOT NULL,
   nom VARCHAR(255) NOT NULL,
+  description TEXT NOT NULL,
   coefficient NUMERIC(2,1),
+  obligatoire BOOLEAN NOT NULL,
   CHECK (coefficient > 0),
   FOREIGN KEY (id_semestre)
   REFERENCES semestres(id_semestre)
@@ -98,6 +101,7 @@ CREATE TABLE inscriptions (
     id_inscription SERIAL PRIMARY KEY,
     numero_etudiant INT NOT NULL,
     id_annee_formation INT NOT NULL,
+    date_inscription DATE NOT NULL DEFAULT CURRENT_DATE,
     valide_le TIMESTAMP,
     mention VARCHAR(255),
     FOREIGN KEY (numero_etudiant)
