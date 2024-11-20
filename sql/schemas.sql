@@ -1,7 +1,19 @@
 -- Tables
+DROP TABLE IF EXISTS avis_etudiant_formation;
+DROP TABLE IF EXISTS notes_ec;
+DROP TABLE IF EXISTS inscriptions;
+DROP TABLE IF EXISTS elements_constitutif;
+DROP TABLE IF EXISTS unites_enseignement;
+DROP TABLE IF EXISTS semestres;
+DROP TABLE IF EXISTS annees_formation;
+DROP TABLE IF EXISTS formations;
+DROP TABLE IF EXISTS etudiants;
+DROP TABLE IF EXISTS enseignants;
+DROP TABLE IF EXISTS personnes;
 
 CREATE TABLE personnes (
   id_personne SERIAL PRIMARY KEY,
+  titre VARCHAR(10),
   prenom VARCHAR(255) NOT NULL,
   nom VARCHAR(255) NOT NULL,
   date_naissance DATE NOT NULL,

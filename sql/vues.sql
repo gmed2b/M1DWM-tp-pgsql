@@ -1,44 +1,54 @@
 
-------creation des vues
---accessible a tous
-CREATE VIEW vue_formations AS
-SELECT nom,description,niveau,departement
-FROM formations;
-GRANT SELECT ON vue_formations TO etudiant, enseignant, directeur_etudes;
+-- Affiche une liste détaillée regroupant toutes les informations nécessaires
+-- sur les formations, triées par formation, année, semestre, UE et EC.
 
----accessible aux enseignets et directeurs
-CREATE VIEW vue_inscriptions_etudiants AS
-SELECT i.id_inscription, e.numero_etudiant, p.nom, p.prenom, f.nom AS formation, a.niveau, i.valide_le
+CREATE OR REPLACE VIEW vue_maquettes_formations AS
+SELECT
+    f.nom AS formation_nom,
+    f.description AS formation_description,
+    f.niveau AS formation_niveau,
+    f.departement AS formation_departement,
+    af.niveau AS annee_niveau,
+    af.nbr_max_etu AS annee_nombre_max_etudiants,
+    s.nom AS semestre_nom,
+    s.date_debut AS semestre_date_debut,
+    s.date_fin AS semestre_date_fin,
+    ue.nom AS ue_nom,
+    ue.coefficient AS ue_coefficient,
+    ec.nom AS ec_nom,
+    ec.heures_cours AS ec_heures_cours,
+    ec.heures_td AS ec_heures_td,
+    ec.heures_tp AS ec_heures_tp,
+    ec.modalites_evaluation AS ec_modalites_evaluation,
+    CONCAT(p.prenom, ' ', p.nom) AS enseignant_responsable
+FROM formations f
+NATURAL JOIN annees_formation af
+NATURAL JOIN semestres s
+NATURAL JOIN unites_enseignement ue
+NATURAL JOIN elements_constitutif ec
+NATURAL JOIN enseignants ens
+NATURAL JOIN personnes p
+ORDER BY f.nom, af.niveau, s.nom, ue.nom, ec.nom;
+
+
+-- Affiche la liste des étudiants inscrits par année de formation,
+-- avec leurs informations personnelles.
+
+CREATE OR REPLACE VIEW vue_liste_etudiants_inscrits AS
+SELECT 
+    i.id_inscription,
+    etu.numero_etudiant,
+    p.prenom,
+    p.nom,
+    p.email,
+    p.telephone,
+    af.niveau AS annee_niveau,
+    f.nom AS formation_nom,
+    i.valide_le,
+    i.mention
 FROM inscriptions i
-JOIN etudiants e ON i.numero_etudiant = e.numero_etudiant
-JOIN personnes p ON e.id_personne = p.id_personne
-JOIN annees_formation a ON i.id_annee_formation = a.id_annee_formation
-JOIN formations f ON a.id_formation = f.id_formation;
-GRANT SELECT ON vue_inscriptions_etudiants TO enseignant, directeur_etudes;
-
----aux enseignant
-CREATE VIEW vue_notes_etudiants AS
-SELECT i.numero_etudiant, p.nom AS etudiant_nom, e.id_ec, ec.nom AS element_constitutif, n.note
-FROM notes_ec n
-JOIN inscriptions i ON n.id_inscription = i.id_inscription
-JOIN etudiants e ON i.numero_etudiant = e.numero_etudiant
-JOIN personnes p ON e.id_personne = p.id_personne
-JOIN elements_constitutif ec ON n.id_ec = ec.id_ec;
-GRANT SELECT ON vue_notes_etudiants TO enseignant;
-
------aux directeurs
-CREATE VIEW vue_informations_enseignants AS
-SELECT en.numero_enseignant, p.nom, p.prenom, en.specialite, en.departement
-FROM enseignants en
-JOIN personnes p ON en.id_personne = p.id_personne;
-GRANT SELECT ON vue_informations_enseignants TO directeur_etudes;
-
------accessibles uniquement aux directeurs et ensignients
-CREATE VIEW vue_moyennes_etudiants AS
-SELECT e.numero_etudiant, p.nom, p.prenom, AVG(n.note) AS moyenne_generale
-FROM notes_ec n
-JOIN inscriptions i ON n.id_inscription = i.id_inscription
-JOIN etudiants e ON i.numero_etudiant = e.numero_etudiant
-JOIN personnes p ON e.id_personne = p.id_personne
-GROUP BY e.numero_etudiant, p.nom, p.prenom;
-GRANT SELECT ON vue_moyennes_etudiants TO directeur_etudes;
+NATURAL JOIN etudiants etu
+NATURAL JOIN personnes p
+NATURAL JOIN annees_formation af
+NATURAL JOIN formations f
+ORDER BY f.nom, af.niveau, p.nom, p.prenom;

@@ -6,89 +6,107 @@ import os
 # Initialisation de Faker
 fake = Faker()
 
+# Mise à jour du script pour générer un fichier global et des fichiers séparés pour chaque table.
 
-def main():
 
+def main_optimized():
     print("Génération des données fictives pour la base de données...")
 
-    # Génération des données fictives
-    students = generate_students(5000)  # Générer 5000 étudiants
-    formations = generate_formations()  # Générer les formations
-    annees = generate_annees_formation(formations)  # Générer les années de formation
-    semestres = generate_semestres(annees)  # Générer les semestres
-    unites = generate_unites_enseignement(
-        semestres
-    )  # Générer les unités d'enseignement
-    enseignants = [
-        (
-            i,
-            fake.name(),
-            random.choice(
-                [
-                    "Algorithmique",
-                    "Réseaux",
-                    "Bases de données",
-                    "Systèmes embarqués",
-                    "IA",
-                ]
-            ),
-        )
-        for i in range(1, 51)
-    ]  # Générer des enseignants fictifs avec spécialités
-    elements = generate_elements_constitutifs(
-        unites, enseignants
-    )  # Générer les éléments constitutifs
-    inscriptions = generate_inscriptions_for_years(
-        annees, students
-    )  # Générer les inscriptions des étudiants
-    notes = generate_notes(elements, inscriptions)  # Générer les notes
+    # Supprime les fichiers existants
+    for file in os.listdir("scripts/sql-out"):
+        os.remove(f"scripts/sql-out/{file}")
+
+    # Génération des données
+    personnes = generate_personnes(5000)  # 5000 personnes
+    students = generate_etudiants(personnes[:4000])  # 3000 étudiants
+    enseignants = generate_enseignants(
+        personnes[4000:]
+    )  # Le reste sont des enseignants
+    formations = generate_formations()
+    annees = generate_annees_formation(formations)
+    semestres = generate_semestres(annees)
+    unites = generate_unites_enseignement(semestres)
+    elements = generate_elements_constitutifs(unites, enseignants)
+    inscriptions = generate_inscriptions_for_years(annees, students)
+    notes = generate_notes(elements, inscriptions)
 
     # Fonction pour générer des scripts SQL d'insertion
     def generate_sql_insert(table_name, data):
         sql = f"INSERT INTO {table_name} VALUES\n"
-        sql += ",\n".join([f"({', '.join(map(str, row))})" for row in data])
-        sql += ";"
+        sql += ",\n".join([f"({', '.join(map(repr, row))})" for row in data])
+        sql += ";\n"
         return sql
 
     DEST_FOLDER = "scripts/sql-out"
-    # Création du dossier de destination s'il n'existe pas
     if not os.path.exists(DEST_FOLDER):
         os.makedirs(DEST_FOLDER)
 
-    # Sauvegarde des données dans des fichiers SQL
-    with open(f"{DEST_FOLDER}/insert_personnes.sql", "x") as file:
-        print("Génération des données pour la table personnes...")
-        file.write(generate_sql_insert("personnes", students))
+    all_sql_content = ""
 
-    with open(f"{DEST_FOLDER}/insert_formations.sql", "x") as file:
-        print("Génération des données pour la table formations...")
-        file.write(generate_sql_insert("formations", formations))
+    # Sauvegarde des données dans des fichiers SQL et construction du fichier global
+    for table_name, data in [
+        ("personnes", personnes),
+        ("etudiants", students),
+        ("enseignants", enseignants),
+        ("formations", formations),
+        ("annees_formation", annees),
+        ("semestres", semestres),
+        ("unites_enseignement", unites),
+        ("elements_constitutif", elements),
+        ("inscriptions", inscriptions),
+        ("notes_ec", notes),
+    ]:
+        file_path = f"{DEST_FOLDER}/insert_{table_name}.sql"
+        sql_content = generate_sql_insert(table_name, data)
+        all_sql_content += sql_content + "\n"
 
-    with open(f"{DEST_FOLDER}/insert_annees_formation.sql", "x") as file:
-        print("Génération des données pour la table annees_formation...")
-        file.write(generate_sql_insert("annees_formation", annees))
+        with open(file_path, "w") as file:
+            print(f"Génération des données pour la table {table_name}...")
+            file.write(sql_content)
 
-    with open(f"{DEST_FOLDER}/insert_semestres.sql", "x") as file:
-        print("Génération des données pour la table semestres...")
-        file.write(generate_sql_insert("semestres", semestres))
+    # Sauvegarde du fichier global
+    with open(f"{DEST_FOLDER}/insert_all.sql", "w") as global_file:
+        print("Génération du fichier global contenant toutes les insertions...")
+        global_file.write(all_sql_content)
 
-    with open(f"{DEST_FOLDER}/insert_unites_enseignement.sql", "x") as file:
-        print("Génération des données pour la table unites_enseignement...")
-        file.write(generate_sql_insert("unites_enseignement", unites))
+    print("Génération des fichiers terminée.")
 
-    with open(f"{DEST_FOLDER}/insert_elements_constitutif.sql", "x") as file:
-        print("Génération des données pour la table elements_constitutif...")
-        file.write(generate_sql_insert("elements_constitutif", elements))
+    # Fonction pour générer des personnes fictives
 
-    with open(f"{DEST_FOLDER}/insert_inscriptions.sql", "x") as file:
-        print("Génération des données pour la table inscriptions...")
-        file.write(generate_sql_insert("inscriptions", inscriptions))
 
-    with open(f"{DEST_FOLDER}/insert_notes_ec.sql", "x") as file:
-        print("Génération des données pour la table notes_ec...")
-        file.write(generate_sql_insert("notes_ec", notes))
+def generate_personnes(num_personnes):
+    personnes = []
+    for i in range(1, num_personnes + 1):
+        titre = random.choice(["M.", "Mme", "Dr.", "Pr."])
+        nom = fake.last_name()
+        prenom = fake.first_name()
+        date_naissance = fake.date_of_birth(minimum_age=18, maximum_age=80)
+        email = fake.email()
+        telephone = fake.phone_number()
+        adresse = fake.address()
+        personnes.append(
+            (i, titre, nom, prenom, date_naissance, email, telephone, adresse)
+        )
+    return personnes
 
-    print("Génération des données terminée.")
+
+# Fonction pour générer des étudiants à partir de personnes
+def generate_etudiants(personnes):
+    etudiants = []
+    for personne in personnes:
+        etudiants.append((personne[0], random.choice(["Licence", "Master"])))
+    return etudiants
+
+
+# Fonction pour générer des enseignants à partir de personnes
+def generate_enseignants(personnes):
+    enseignants = []
+    for personne in personnes:
+        specialite = random.choice(
+            ["Algorithmique", "Réseaux", "Bases de données", "Systèmes embarqués", "IA"]
+        )
+        enseignants.append((personne[0], specialite))
+    return enseignants
 
 
 # Fonction pour générer des dates d'inscriptions cohérentes
@@ -113,23 +131,6 @@ def generate_inscriptions(annee_formation_id, num_etudiants, max_inscription):
             (etudiant_id, annee_formation_id, start_date, validation_state)
         )
     return inscriptions
-
-
-# Fonction pour générer des étudiants fictifs
-def generate_students(num_students):
-    students = []
-    for _ in range(num_students):
-        first_name = fake.first_name()
-        last_name = fake.last_name()
-        birth_date = fake.date_of_birth(minimum_age=18, maximum_age=30)
-        email = fake.email()
-        phone = fake.phone_number()
-        address = fake.address()
-        titre = random.choice(["M.", "Mme", "Dr.", "Pr."])
-        students.append(
-            (titre, first_name, last_name, birth_date, email, phone, address)
-        )
-    return students
 
 
 # Fonction pour générer des formations fictives
@@ -238,11 +239,11 @@ def generate_notes(elements, inscriptions):
     notes = []
     for inscription in inscriptions:
         for element in elements:
-            note = round(random.uniform(10.0, 20.0), 1)  # Note entre 10 et 20
+            note = round(random.uniform(0, 20.0), 1)  # Note entre 10 et 20
             evaluation_date = fake.date_this_year()
             notes.append((inscription[0], element[0], note, evaluation_date))
     return notes
 
 
 if __name__ == "__main__":
-    main()
+    main_optimized()
