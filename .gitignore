@@ -1,8 +1,4 @@
-
 .DS_Store
-*/.venv/
-*/venv/
-*/ENV/
-*/env/
-*/.vscode/
-*/.idea/
+.venv/
+.vscode/
+.idea/
