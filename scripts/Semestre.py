@@ -13,7 +13,7 @@ class Semestre:
     def generateMany(annee_formation: AnneeFormation):
         semestres = []
         for num_semestre in range(1, 3):
-            semestre = ("Semestre " + str(num_semestre),)
+            semestre = "Semestre " + str(num_semestre)
             semestres.append(Semestre.generateSemestre(annee_formation, semestre))
 
         return semestres
@@ -21,12 +21,9 @@ class Semestre:
     @staticmethod
     def generateSemestre(annee_formation: AnneeFormation, semestre: str):
         Semestre._id += 1
-        annee_formation = (
-            annee_formation if annee_formation else AnneeFormation.generate()
-        )
         annee = annee_formation["date_formation"].year
-        date_debut = datetime.date(annee, 9, 1)
-        date_fin = datetime.date(annee + 1, 5, 31)
+        date_debut = datetime.date(annee, 9, 1).strftime("%Y-%m-%d")
+        date_fin = datetime.date(annee + 1, 5, 31).strftime("%Y-%m-%d")
 
         return {
             "id_semestre": Semestre._id,

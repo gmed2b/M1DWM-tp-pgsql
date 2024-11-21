@@ -24,14 +24,14 @@ def main():
     notes = []
 
     for formation in formations:
-        annees_formations = AnneeFormation.generateMany(formation)
+        annees_formations.extend(AnneeFormation.generateMany(formation))
         for annee_formation in annees_formations:
-            semestres = Semestre.generateMany(annee_formation)
+            semestres.extend(Semestre.generateMany(annee_formation))
             for semestre in semestres:
-                ues = UniteEnseignement.generateMany(5, semestre)
+                ues.extend(UniteEnseignement.generateMany(5, semestre))
                 for ue in ues:
                     enseignant = fake.random_choices(enseignants, length=1)[0]
-                    ecs = ElementConstitutif.generateMany(10, ue, enseignant)
+                    ecs.extend(ElementConstitutif.generateMany(10, ue, enseignant))
 
     # Inscriptions des etudiants a des formations
     for etudiant in etudiants:
@@ -60,22 +60,22 @@ def main():
 
     for formation in formations:
         insert_statements.append(
-            f"INSERT INTO formations VALUES ({formation['id_formation']}, '{formation['nom']}', {formation['description']}, {formation['niveau']}, {formation['departement']});"
+            f"INSERT INTO formations VALUES ({formation['id_formation']}, '{formation['nom']}', '{formation['description']}', '{formation['niveau']}', '{formation['departement']}');"
         )
 
     for annee_formation in annees_formations:
         insert_statements.append(
-            f"INSERT INTO annees_formation VALUES ({annee_formation['id_annee_formation']}, {annee_formation['id_formation']}, {annee_formation['date_formation']}, {annee_formation['niveau']}, {annee_formation['nbr_max_etu']});"
+            f"INSERT INTO annees_formation VALUES ({annee_formation['id_annee_formation']}, {annee_formation['id_formation']}, '{annee_formation['date_formation'].strftime("%Y-%m-%d")}', '{annee_formation['niveau']}', {annee_formation['nbr_max_etu']});"
         )
 
     for semestre in semestres:
         insert_statements.append(
-            f"INSERT INTO semestres VALUES ({semestre['id_semestre']}, {semestre['id_annee_formation']}, {semestre['semestre']}, {semestre['date_debut']}, {semestre['date_fin']});"
+            f"INSERT INTO semestres VALUES ({semestre['id_semestre']}, {semestre['id_annee_formation']}, '{semestre['semestre']}', '{semestre['date_debut']}', '{semestre['date_fin']}');"
         )
 
     for ue in ues:
         insert_statements.append(
-            f"INSERT INTO unites_enseignement VALUES ({ue['id_ue']}, {ue['id_semestre']}, '{ue['nom']}', '{ue['description']}', '{ue['coefficient']}', '{ue['obligatoire']}');"
+            f"INSERT INTO unites_enseignement VALUES ({ue['id_ue']}, {ue['id_semestre']}, '{ue['nom']}', '{ue['description']}', {ue['coefficient']}, {ue['obligatoire']});"
         )
 
     for ec in ecs:

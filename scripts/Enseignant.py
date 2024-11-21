@@ -15,7 +15,7 @@ class Enseignant:
         return {
             "numero_enseignant": Enseignant._id,
             "id_personne": personne["id_personne"],
-            "specialite": fake.job(),
+            "specialite": fake.job().replace("'", ""),
             "departement": fake.random_choices(
                 [
                     "Science",
@@ -25,7 +25,7 @@ class Enseignant:
                     "Economie",
                     "Physique",
                 ]
-            ),
+            )[0],
             "personne": personne,
         }
 

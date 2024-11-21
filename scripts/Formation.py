@@ -5,7 +5,7 @@ from faker import Faker
 fake = Faker()
 
 FORMATIONS_LICENCE = [
-    "Science pour l'ingénieur",
+    "Science pour l''ingénieur",
     "Langues étrangères appliquées",
     "Economie et gestion",
     "Parcours accès santé",
