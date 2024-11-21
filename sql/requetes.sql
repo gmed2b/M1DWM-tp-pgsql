@@ -3,13 +3,14 @@
 WITH formations_frequentees AS (
   SELECT 
       f.id_formation, 
-      COUNT(i.id_etudiant) AS total_etudiants
+      COUNT(e.numero_etudiant) AS total_etudiants
   FROM formations f
-  JOIN annees_formation af ON f.id_formation = af.id_formation
-  JOIN inscriptions i ON af.id_annee_formation = i.id_annee_formation
-  WHERE af.annee >= 2010
+  NATURAL JOIN annees_formation af
+  NATURAL JOIN inscriptions i
+  NATURAL JOIN etudiants e
+  WHERE af.date_formation >= 2010
   GROUP BY f.id_formation
-  HAVING COUNT(i.id_etudiant) > 5
+  HAVING COUNT(e.numero_etudiant) > 5
 )
 SELECT 
     af.annee AS annee_academique, 

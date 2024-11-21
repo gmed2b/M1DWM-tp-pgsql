@@ -13,8 +13,8 @@ fake = Faker()
 
 
 def main():
-    etudiants = Etudiant.generateMany(1000)
-    enseignants = Enseignant.generateMany(200)
+    etudiants = Etudiant.generateMany(200)
+    enseignants = Enseignant.generateMany(50)
     formations = Formation.generateMany(15)
     annees_formations = []
     semestres = []
@@ -24,14 +24,14 @@ def main():
     notes = []
 
     for formation in formations:
-        annees_formations.extend(AnneeFormation.generateMany(formation))
+        annees_formations = AnneeFormation.generateMany(formation)
         for annee_formation in annees_formations:
-            semestres.extend(Semestre.generateMany(annee_formation))
+            semestres = Semestre.generateMany(annee_formation)
             for semestre in semestres:
-                ues.extend(UniteEnseignement.generateMany(5, semestre))
+                ues = UniteEnseignement.generateMany(5, semestre)
                 for ue in ues:
                     enseignant = fake.random_choices(enseignants, length=1)[0]
-                    ecs.extend(ElementConstitutif.generateMany(10, ue, enseignant))
+                    ecs = ElementConstitutif.generateMany(10, ue, enseignant)
 
     # Inscriptions des etudiants a des formations
     for etudiant in etudiants:
