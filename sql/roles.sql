@@ -39,8 +39,11 @@ GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO directeur_des_etudes;
 GRANT SELECT, INSERT, UPDATE ON TABLE
   formations, annees_formation,
   semestres, unites_enseignement,
-  elements_constitutif, notes_ec
+  elements_constitutif, notes_ec,
+  resultats
 TO directeur_des_etudes;
 
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO enseignant;
 GRANT INSERT, UPDATE ON TABLE notes_ec TO enseignant;
+
+GRANT INSERT, UPDATE ON TABLE avis_etudiant_formation TO etudiant;

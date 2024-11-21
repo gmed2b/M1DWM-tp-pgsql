@@ -60,9 +60,9 @@ SELECT
     COUNT(ins.numero_etudiant) AS nbr_inscrits,
     an.nbr_max_etu
 FROM annees_formation an
-LEFT JOIN inscriptions ins USING an.id_annee_formation
+NATURAL LEFT JOIN inscriptions ins
 NATURAL JOIN formations f
-GROUP BY an.id_annee_formation, an.nbr_max_etu;
+GROUP BY an.id_annee_formation, f.nom, an.nbr_max_etu;
 
 
 -- Affiche la progression des étudiants par formation, avec indication de la validation.
