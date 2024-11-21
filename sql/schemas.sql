@@ -122,7 +122,7 @@ CREATE TABLE resultats (
   id_resultat SERIAL PRIMARY KEY,
   numero_etudiant INT NOT NULL,
   id_annee_formation INT NOT NULL,
-  id_semestre INT,
+  id_semestre INT NOT NULL,
   moyenne_semestre NUMERIC(4, 2),
   moyenne_annuelle NUMERIC(4, 2),
   mention VARCHAR(255),
